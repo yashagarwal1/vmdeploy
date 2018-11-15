@@ -125,7 +125,7 @@
           "osDisk": {
             "name": "vm1vsOSDisk",
             "vhd": {
-              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', 'newstrvs1'), '2016-01-01').primaryEndpoints.blob, variables('vm1vsStorageAccountContainerName'), '/', variables('vm1vsOSDiskName'), '.vhd')]"
+              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', 'newstrya223'), '2016-01-01').primaryEndpoints.blob, variables('vm1vsStorageAccountContainerName'), '/', variables('vm1vsOSDiskName'), '.vhd')]"
             },
             "caching": "ReadWrite",
             "createOption": "FromImage"

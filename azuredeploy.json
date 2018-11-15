@@ -1,0 +1,146 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+  },
+  "variables": {
+    "vm1vsName": "testVM",
+    "vm1vsAdminUserName": "testadmin",
+    "vm1vsAdminPassword": "testadmin@1234",
+    "vm1vsWindowsOSVersion": "2012-R2-Datacenter",
+    "VnetVS1Prefix": "10.0.0.0/16",
+    "VnetVS1Subnet1Name": "Subnet-1",
+    "VnetVS1Subnet1Prefix": "10.0.0.0/24",
+    "VnetVS1Subnet2Name": "Subnet-2",
+    "VnetVS1Subnet2Prefix": "10.0.1.0/24",
+    "vm1vsImagePublisher": "MicrosoftWindowsServer",
+    "vm1vsImageOffer": "WindowsServer",
+    "vm1vsOSDiskName": "vm1vsOSDisk",
+    "vm1vsVmSize": "Standard_A2",
+    "vm1vsVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'VnetVS1')]",
+    "vm1vsSubnetRef": "[concat(variables('vm1vsVnetID'), '/subnets/', variables('VnetVS1Subnet1Name'))]",
+    "vm1vsStorageAccountContainerName": "vhds",
+    "vm1vsNicName": "[concat(variables('vm1vsName'), 'NetworkInterface')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-01-01",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "newstrya223",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "Storage",
+      "properties": {}
+    },
+    {
+      "name": "VnetVS1",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "VnetVS1"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('VnetVS1Prefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('VnetVS1Subnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('VnetVS1Subnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[variables('VnetVS1Subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[variables('VnetVS1Subnet2Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+
+    //NIC1
+    {
+      "name": "[variables('vm1vsNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'VnetVS1')]"
+      ],
+      "tags": {
+        "displayName": "vm1vsNic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('vm1vsSubnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+    //VM1
+    {
+      "name": "[variables('vm1vsName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', 'newstrya223')]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('vm1vsNicName'))]"
+      ],
+      "tags": {
+        "displayName": "vm1vs"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vm1vsVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vm1vsName')]",
+          "adminUsername": "[variables('vm1vsAdminUsername')]",
+          "adminPassword": "[variables('vm1vsAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('vm1vsImagePublisher')]",
+            "offer": "[variables('vm1vsImageOffer')]",
+            "sku": "[variables('vm1vsWindowsOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "vm1vsOSDisk",
+            "vhd": {
+              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', 'newstrvs1'), '2016-01-01').primaryEndpoints.blob, variables('vm1vsStorageAccountContainerName'), '/', variables('vm1vsOSDiskName'), '.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vm1vsNicName'))]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {}
+
+}
